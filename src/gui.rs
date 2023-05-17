@@ -3,8 +3,8 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use lm_sensors::{feature, prelude::SharedChip, ChipRef, LMSensors};
-use std::{error::Error, rc::Rc, cell::RefCell, thread::panicking};
+use lm_sensors::{feature, prelude::SharedChip, ChipRef};
+use std::{error::Error, cell::RefCell};
 use std::{io::Write, thread, time::Duration};
 
 use tui::{
@@ -24,6 +24,7 @@ pub fn build_gui<'a, T: Backend + Write>(
 ) -> Result<(), Box<dyn Error>> {
     enable_raw_mode()?;
     let mut app = App::new();
+    let input_poll_window = Duration::from_millis(16);
 
     terminal.autoresize()?;
 
@@ -33,34 +34,38 @@ pub fn build_gui<'a, T: Backend + Write>(
         EnableMouseCapture
     )?;
 
-    let input_poll_window = Duration::from_millis(16);
+    let app = RefCell::new(app);
 
+    // Render Loop
     loop {
-        terminal.draw(|f| {
-            draw_ui(f, &app.get_state().get_sensors(), &app);
-        })?;
-
+        terminal
+            .draw(|f| {
+                draw_ui(f, &app.borrow());
+            })
+            .unwrap();
         let event_available = event::poll(input_poll_window).unwrap();
         if event_available {
-            if handle_input(&event::read().unwrap(), &mut app).is_err() {
-                disable_raw_mode().unwrap();
-                execute!(
-                    terminal.backend_mut(),
-                    LeaveAlternateScreen,
-                    DisableMouseCapture
-                ).unwrap();
-                terminal.show_cursor().unwrap();
+            if handle_input(&event::read().unwrap(), &app).is_err() {
                 break;
             }
         }
-
-        thread::sleep(tick_rate - input_poll_window);
+        thread::sleep(tick_rate);
     }
+
+    disable_raw_mode().unwrap();
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )
+    .unwrap();
+    terminal.show_cursor().unwrap();
 
     Ok(())
 }
 
-fn draw_ui<'a, B: Backend>(f: &mut Frame<B>, sensors: &LMSensors, app: &'a App<'a>) {
+fn draw_ui<'a, B: Backend>(f: &mut Frame<B>, app: &'a App<'a>) {
+    let sensors = &app.state.get_sensors();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
@@ -73,7 +78,10 @@ fn draw_ui<'a, B: Backend>(f: &mut Frame<B>, sensors: &LMSensors, app: &'a App<'
     let chip_list_items: Vec<ListItem> = sensors
         .chip_iter(None)
         .map(|chip| {
-            chip_list_item(chip, chip.address() == app.get_state().get_selected_chip().unwrap().address())
+            chip_list_item(
+                chip,
+                chip.address() == app.state.get_selected_chip().address(),
+            )
         })
         .collect();
     let list = List::new(chip_list_items).block(lower_block);

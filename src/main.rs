@@ -1,6 +1,5 @@
 use std::{error::Error, time::Duration};
 
-use app::App;
 use gui::build_gui;
 
 mod sensors;

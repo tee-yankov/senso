@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use lm_sensors::{ChipRef, LMSensors};
 
 use crate::sensors;
@@ -8,16 +10,50 @@ pub struct AppState<'a> {
 }
 
 impl<'a> AppState<'a> {
-    pub fn get_sensors(&'a self) -> &'a LMSensors {
+    pub fn get_sensors(&self) -> &LMSensors {
         &self.sensors
     }
 
-    pub fn get_selected_chip(&'a self) -> Option<&'a ChipRef<'a>> {
+    pub fn get_selected_chip(&self) -> ChipRef {
         if let Some(selected_chip) = &self.selected_chip {
-            Some(selected_chip)
+            *selected_chip.borrow()
         } else {
-            None
+            self.sensors.chip_iter(None).next().unwrap()
         }
+    }
+
+    pub fn select_next_chip(&mut self) {
+        let (current_chip_index, _) = self
+            .sensors
+            .chip_iter(None)
+            .enumerate()
+            .find(|(_, chip)| *chip == self.get_selected_chip())
+            .unwrap();
+        self.selected_chip = Some(
+            self.sensors
+                .chip_iter(None)
+                .enumerate()
+                .find(|(i, _)| *i == current_chip_index + 1)
+                .unwrap()
+                .1,
+        );
+    }
+
+    pub fn select_previous_chip(&mut self) {
+        let chips: Vec<_> = self.sensors.chip_iter(None).collect();
+        let (current_chip_index, _) = self
+            .sensors
+            .chip_iter(None)
+            .enumerate()
+            .find(|(_, chip)| *chip == self.get_selected_chip())
+            .unwrap();
+        let (_, next_chip) = chips
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(i, _)| *i == current_chip_index - 1)
+            .unwrap();
+        self.selected_chip = None;
     }
 }
 
@@ -39,17 +75,5 @@ impl<'a> App<'a> {
         App {
             state: AppState::default(),
         }
-    }
-
-    pub fn get_state(&'a self) -> &'a AppState<'a> {
-        &self.state
-    }
-
-    pub fn select_next_chip(&'a mut self) {
-        unimplemented!()
-    }
-
-    pub fn select_previous_chip(&'a mut self) {
-        unimplemented!()
     }
 }
