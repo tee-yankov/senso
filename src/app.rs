@@ -1,63 +1,58 @@
-use std::borrow::Borrow;
-
-use lm_sensors::{ChipRef, LMSensors};
+use lm_sensors::{ChipRef, LMSensors, prelude::SharedChip};
 
 use crate::sensors;
 
-pub struct AppState<'a> {
-    selected_chip: Option<ChipRef<'a>>,
+pub struct AppState {
+    selected_chip: Option<i32>,
     sensors: LMSensors,
 }
 
-impl<'a> AppState<'a> {
+impl AppState {
     pub fn get_sensors(&self) -> &LMSensors {
         &self.sensors
     }
 
     pub fn get_selected_chip(&self) -> ChipRef {
-        if let Some(selected_chip) = &self.selected_chip {
-            *selected_chip.borrow()
+        if let Some(selected_chip) = self.selected_chip {
+            self.sensors.chip_iter(None).find(|chip| chip.address().unwrap() == selected_chip).unwrap()
         } else {
             self.sensors.chip_iter(None).next().unwrap()
         }
     }
 
-    pub fn select_next_chip(&mut self) {
+    fn get_nth_chip(&self, n: isize) -> ChipRef {
+        let max_length: usize = self.sensors.chip_iter(None).collect::<Vec<ChipRef>>().len();
+        let n = isize::min(isize::max(n, 0), (max_length - 1) as isize) as usize;
+        let (_, next_chip) = self.sensors
+                .chip_iter(None)
+                .enumerate()
+                .find(|(i, _)| *i == n)
+                .unwrap();
+        next_chip
+    }
+
+    fn get_current_chip_index(&self) -> usize {
         let (current_chip_index, _) = self
             .sensors
             .chip_iter(None)
             .enumerate()
             .find(|(_, chip)| *chip == self.get_selected_chip())
             .unwrap();
-        self.selected_chip = Some(
-            self.sensors
-                .chip_iter(None)
-                .enumerate()
-                .find(|(i, _)| *i == current_chip_index + 1)
-                .unwrap()
-                .1,
-        );
+        current_chip_index
+    }
+
+    pub fn select_next_chip(&mut self) {
+        let current_chip_index = self.get_current_chip_index();
+        self.selected_chip = self.get_nth_chip((current_chip_index + 1) as isize).address();
     }
 
     pub fn select_previous_chip(&mut self) {
-        let chips: Vec<_> = self.sensors.chip_iter(None).collect();
-        let (current_chip_index, _) = self
-            .sensors
-            .chip_iter(None)
-            .enumerate()
-            .find(|(_, chip)| *chip == self.get_selected_chip())
-            .unwrap();
-        let (_, next_chip) = chips
-            .iter()
-            .enumerate()
-            .rev()
-            .find(|(i, _)| *i == current_chip_index - 1)
-            .unwrap();
-        self.selected_chip = None;
+        let current_chip_index = self.get_current_chip_index();
+        self.selected_chip = self.get_nth_chip((current_chip_index.checked_sub(1).unwrap_or(0)) as isize).address();
     }
 }
 
-impl<'a> Default for AppState<'a> {
+impl Default for AppState {
     fn default() -> Self {
         AppState {
             selected_chip: None,
@@ -66,11 +61,11 @@ impl<'a> Default for AppState<'a> {
     }
 }
 
-pub struct App<'a> {
-    pub state: AppState<'a>,
+pub struct App {
+    pub state: AppState,
 }
 
-impl<'a> App<'a> {
+impl App {
     pub fn new() -> Self {
         App {
             state: AppState::default(),

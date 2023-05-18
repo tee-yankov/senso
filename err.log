@@ -1,0 +1,3 @@
+   Compiling senso v0.1.0 (/home/ted/Projects/rust/senso)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.15s
+     Running `target/debug/senso`

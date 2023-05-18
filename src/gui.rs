@@ -4,8 +4,8 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use lm_sensors::{feature, prelude::SharedChip, ChipRef};
-use std::{error::Error, cell::RefCell};
-use std::{io::Write, thread, time::Duration};
+use std::{cell::RefCell, error::Error};
+use std::{thread, time::Duration};
 
 use tui::{
     backend::Backend,
@@ -13,18 +13,16 @@ use tui::{
     style::Style,
     text::Text,
     widgets::{Block, Borders, List, ListItem},
-    Frame, Terminal,
+    Frame,
 };
 
-use crate::{app::App, input::handle_input};
+use crate::{app::App, input::handle_input, terminal};
 
-pub fn build_gui<'a, T: Backend + Write>(
-    terminal: &mut Terminal<T>,
-    tick_rate: Duration,
-) -> Result<(), Box<dyn Error>> {
+pub fn run_gui<'a>(tick_rate: Duration) -> Result<(), Box<dyn Error>> {
+    let mut terminal = terminal::get_terminal().unwrap();
     enable_raw_mode()?;
-    let mut app = App::new();
-    let input_poll_window = Duration::from_millis(16);
+    let app = App::new();
+    let input_poll_window = tick_rate;
 
     terminal.autoresize()?;
 
@@ -64,7 +62,7 @@ pub fn build_gui<'a, T: Backend + Write>(
     Ok(())
 }
 
-fn draw_ui<'a, B: Backend>(f: &mut Frame<B>, app: &'a App<'a>) {
+fn draw_ui<'a, B: Backend>(f: &mut Frame<B>, app: &App) {
     let sensors = &app.state.get_sensors();
     let chunks = Layout::default()
         .direction(Direction::Vertical)

@@ -1,6 +1,7 @@
-use std::{error::Error, time::Duration};
+use std::{error::Error, time::Duration, panic, io::stdout};
 
-use gui::build_gui;
+use crossterm::{terminal::{disable_raw_mode, LeaveAlternateScreen}, execute, event::DisableMouseCapture};
+use gui::run_gui;
 
 mod sensors;
 mod terminal;
@@ -9,9 +10,16 @@ mod input;
 mod app;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut term = terminal::get_terminal().unwrap();
+    let _ = panic::catch_unwind(|| {
+        run_gui(Duration::from_millis(16)).unwrap();
+    });
 
-    build_gui(&mut term, Duration::from_millis(100))?;
+    disable_raw_mode()?;
+    execute!(
+        stdout(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    ).unwrap();
 
     Ok(())
 }
