@@ -7,5 +7,7 @@ edition = "2021"
 
 [dependencies]
 crossterm = "0.26.1"
+lazy_static = "1.4.0"
 lm-sensors = "0.1.5"
-tui = "0.19.0"
+log = "0.4.17"
+ratatui = "0.20.1"

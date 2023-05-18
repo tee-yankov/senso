@@ -4,7 +4,7 @@ use crossterm::event::{KeyCode, Event};
 
 use crate::app::App;
 
-pub fn handle_input<'a>(event: &Event, app: &RefCell<App>) -> Result<(), Box<dyn Error>> {
+pub fn handle_input(event: &Event, app: &RefCell<App>) -> Result<(), Box<dyn Error>> {
     match event {
         Event::Key(key_event) => {
             match key_event.code {

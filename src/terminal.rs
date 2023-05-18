@@ -1,5 +1,5 @@
 use std::{error::Error, io::{self, Stdout}};
-use tui::{backend::CrosstermBackend, Terminal};
+use ratatui::{backend::CrosstermBackend, Terminal};
 
 pub fn get_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
     let stdout = io::stdout();
