@@ -82,6 +82,7 @@ fn draw_ui<'a, B: Backend>(f: &mut Frame<B>, app: &App) {
             )
         })
         .collect();
+
     let list = List::new(chip_list_items).block(lower_block);
 
     f.render_widget(list, chunks[1]);
@@ -89,30 +90,9 @@ fn draw_ui<'a, B: Backend>(f: &mut Frame<B>, app: &App) {
 
 fn chip_list_item(chip: ChipRef, is_highlighted: bool) -> ListItem {
     let formatted_string = format!(
-        "{}/{} {}",
+        "{}/{}",
         chip.prefix().unwrap().ok().unwrap(),
         chip.name().unwrap(),
-        chip.feature_iter()
-            .filter_map(|feature| {
-                if feature.kind() == Some(feature::Kind::Temperature) {
-                    let temperatures: String = feature
-                        .sub_feature_iter()
-                        .filter_map(|sub_feature| {
-                            if let (Some(Ok(name)), Ok(value)) =
-                                (sub_feature.name(), sub_feature.value())
-                            {
-                                Some(format!("[{} {}]", name, value))
-                            } else {
-                                None
-                            }
-                        })
-                        .collect();
-                    Some(format!(" {} {}", feature.label().unwrap(), temperatures))
-                } else {
-                    None
-                }
-            })
-            .collect::<String>()
     );
     let text = Text::from(formatted_string);
     let style = if is_highlighted {
