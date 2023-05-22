@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     io::Write,
     sync::{mpsc, Mutex},
     thread,
@@ -10,6 +10,7 @@ use lazy_static::lazy_static;
 
 struct Logger<T> {
     rx: Mutex<mpsc::Receiver<T>>,
+    #[allow(unused)]
     tx: Mutex<mpsc::Sender<T>>,
 }
 
@@ -42,6 +43,7 @@ lazy_static! {
     static ref LOGGER: Logger<String> = Logger::default();
 }
 
+#[allow(unused)]
 pub fn log_message(message: &str) {
     LOGGER
         .tx

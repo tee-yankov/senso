@@ -1,20 +1,15 @@
-use lm_sensors::{feature, prelude::SharedChip, ChipRef, LMSensors};
+use lm_sensors::{prelude::SharedChip, ChipRef, LMSensors};
 
-use crate::{sensors, logger::log_message};
+use crate::sensors;
 
 pub struct AppState {
     selected_chip: Option<i32>,
     sensors: LMSensors,
-    graph_data: Vec<(f64, f64)>,
 }
 
 impl AppState {
     pub fn get_sensors(&self) -> &LMSensors {
         &self.sensors
-    }
-
-    pub fn get_graph_data(&self) -> &[(f64, f64)] {
-        &self.graph_data
     }
 
     pub fn get_selected_chip(&self) -> ChipRef {
@@ -70,7 +65,6 @@ impl Default for AppState {
         AppState {
             selected_chip: None,
             sensors: sensors::get_all_sensors().unwrap(),
-            graph_data: vec![],
         }
     }
 }
@@ -86,31 +80,5 @@ impl App {
         }
     }
 
-    pub fn tick(&mut self) {
-        self.update_graph_data();
-    }
-
-    fn update_graph_data(&mut self) {
-        let chip = self.state.get_selected_chip();
-        let data: Vec<(f64, f64)> = chip
-            .feature_iter()
-            .filter(|feature| matches!(feature.kind(), Some(feature::Kind::Temperature)))
-            .map(|feature| {
-                let temperatures: Vec<f64> = feature
-                    .sub_feature_by_kind(lm_sensors::value::Kind::TemperatureInput)
-                    .iter()
-                    .map(|sub_feature| sub_feature.value().unwrap().raw_value())
-                    .collect();
-
-
-                (
-                    *temperatures.get(0).unwrap_or(&0.0),
-                    *temperatures.get(0).unwrap_or(&0.0),
-                )
-            })
-            .collect();
-
-        log_message(format!("{:?}", data).as_ref());
-        self.state.graph_data = data;
-    }
+    pub fn tick(&mut self) {}
 }

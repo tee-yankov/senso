@@ -6,7 +6,7 @@ use crossterm::{
     terminal::{disable_raw_mode, LeaveAlternateScreen},
 };
 use gui::run_gui;
-use logger::{log_message, start_logger};
+use logger::start_logger;
 
 mod app;
 mod gui;
@@ -14,14 +14,13 @@ mod input;
 mod logger;
 mod sensors;
 mod terminal;
+mod components;
 
 fn main() -> Result<(), Box<dyn Error>> {
     start_logger();
 
-    log_message("-==NEW RUN==-");
-
     let _ = panic::catch_unwind(|| {
-        run_gui(Duration::from_millis(160)).unwrap();
+        run_gui(Duration::from_millis(100)).unwrap();
     });
 
     disable_raw_mode()?;

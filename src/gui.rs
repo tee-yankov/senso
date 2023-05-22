@@ -11,19 +11,17 @@ use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
     style::Style,
-    symbols,
     text::{Span, Text},
-    widgets::{Axis, Block, Borders, Chart, Dataset, List, ListItem, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
 
-use crate::{app::App, input::handle_input, terminal};
+use crate::{app::App, input::handle_input, terminal, components};
 
 pub fn run_gui(tick_rate: Duration) -> Result<(), Box<dyn Error>> {
     let mut terminal = terminal::get_terminal().unwrap();
     enable_raw_mode()?;
     let app = App::new();
-    let input_poll_window = tick_rate;
 
     terminal.autoresize()?;
 
@@ -42,7 +40,7 @@ pub fn run_gui(tick_rate: Duration) -> Result<(), Box<dyn Error>> {
                 draw_ui(f, &app.borrow());
             })
             .unwrap();
-        let event_available = event::poll(input_poll_window).unwrap();
+        let event_available = event::poll(Duration::from_millis(0)).unwrap();
         if event_available {
             if handle_input(&event::read().unwrap(), &app).is_err() {
                 break;
@@ -95,9 +93,9 @@ fn draw_ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let nested_layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Ratio(1, 3),
-            Constraint::Ratio(1, 3),
-            Constraint::Ratio(1, 3),
+            Constraint::Ratio(3, 12),
+            Constraint::Ratio(4, 12),
+            Constraint::Ratio(5, 12),
         ])
         .split(chunks[1]);
     let list = List::new(chip_list_items).block(lower_block);
@@ -108,8 +106,7 @@ fn draw_ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     f.render_widget(chip_details, nested_layout[1]);
 
     // Charts
-    let chart = temperature_graphs(app.state.get_graph_data());
-    f.render_widget(chart, nested_layout[2]);
+    components::temperature_graphs::temperature_graphs(&app, f, nested_layout[2]);
 }
 
 fn chip_list_item(chip: ChipRef, is_highlighted: bool) -> ListItem {
@@ -160,32 +157,4 @@ fn chip_info_panel(chip: ChipRef) -> Paragraph {
         .collect::<String>();
 
     Paragraph::new(Text::from(feature_spans))
-}
-
-fn temperature_graphs(graph_data: &[(f64, f64)]) -> Chart {
-    let dataset = Dataset::default()
-        .name("temperature")
-        .marker(symbols::Marker::Block)
-        .graph_type(ratatui::widgets::GraphType::Line)
-        .style(Style::default().fg(ratatui::style::Color::Cyan))
-        .data(graph_data);
-
-    Chart::new(vec![dataset])
-        .block(Block::default().title("Temperature Chart").borders(Borders::ALL))
-        .x_axis(
-            Axis::default()
-                .title(Span::styled(
-                    "X Axis",
-                    Style::default().fg(ratatui::style::Color::Red),
-                ))
-                .bounds([0.0, 100.0]),
-        )
-        .y_axis(
-            Axis::default()
-                .title(Span::styled(
-                    "Y Axis",
-                    Style::default().fg(ratatui::style::Color::White),
-                ))
-                .bounds([0.0, 100.0]),
-        )
 }
