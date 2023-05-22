@@ -1,4 +1,4 @@
-use std::{iter::zip, fmt::format};
+use std::iter::zip;
 
 use lm_sensors::{feature, prelude::SharedChip};
 use ratatui::{
