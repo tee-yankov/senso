@@ -18,7 +18,11 @@ pub fn handle_input(event: &Event, app: &RefCell<App>) -> Result<(), Box<dyn Err
                 KeyCode::Up | KeyCode::Char('k') => {
                     app.borrow_mut().state.select_previous_chip();
                     Ok(())
-                }
+                },
+                KeyCode::Enter | KeyCode::Char('p') => {
+                    app.borrow_mut().state.set_pinned_chip();
+                    Ok(())
+                },
                 _ => Ok(())
             }
         },

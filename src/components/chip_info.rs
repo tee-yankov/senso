@@ -3,9 +3,15 @@ use ratatui::{widgets::{Paragraph, Block, Borders}, text::Text, backend::Backend
 
 use crate::app::App;
 
+use super::chip_list::ChipListProps;
 
-pub fn chip_info_panel<B: Backend>(app: &App, f: &mut Frame<B>, area: Rect) {
-    let chip = app.state.get_selected_chip();
+
+pub fn chip_info_panel<B: Backend>(app: &App, f: &mut Frame<B>, area: Rect, props: &ChipListProps) {
+    let chip = if props.is_pinned_chip_view {
+        app.state.get_pinned_chip().unwrap()
+    } else {
+        app.state.get_selected_chip()
+    };
     let feature_spans = chip
         .feature_iter()
         .filter_map(|feature| {

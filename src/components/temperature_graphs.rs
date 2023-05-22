@@ -9,7 +9,9 @@ use ratatui::{
     Frame,
 };
 
-use crate::{app::App, logger::log_message};
+use crate::app::App;
+
+use super::chip_list::ChipListProps;
 
 fn get_sub_feature(feature: &FeatureRef, kind: Kind) -> Option<f64>  {
     feature.sub_feature_by_kind(kind)
@@ -18,8 +20,12 @@ fn get_sub_feature(feature: &FeatureRef, kind: Kind) -> Option<f64>  {
            .next()
 }
 
-pub fn temperature_graphs<'a, B: Backend>(app: &App, f: &mut Frame<B>, area: Rect) {
-    let chip = app.state.get_selected_chip();
+pub fn temperature_graphs<'a, B: Backend>(app: &App, f: &mut Frame<B>, area: Rect, props: &ChipListProps) {
+    let chip = if props.is_pinned_chip_view {
+        app.state.get_pinned_chip().unwrap()
+    } else {
+        app.state.get_selected_chip()
+    };
     let data: Vec<(String, f64, f64)> = chip
         .feature_iter()
         .filter(|feature| matches!(feature.kind(), Some(feature::Kind::Temperature)))
@@ -50,7 +56,6 @@ pub fn temperature_graphs<'a, B: Backend>(app: &App, f: &mut Frame<B>, area: Rec
         } else {
             current_t as u16
         };
-        log_message(&format!("current: {} | max: {} | {}%", current_t, max_t, current_t_pct_from_max));
         let gauge_bg_color: Color = if current_t_pct_from_max > 50 {
             Color::Red
         } else {

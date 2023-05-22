@@ -3,15 +3,24 @@ use ratatui::{Frame, layout::Rect, backend::Backend, widgets::{List, ListItem, B
 
 use crate::app::App;
 
-pub fn chip_list<B: Backend>(app: &App, f: &mut Frame<B>, area: Rect) {
+pub struct ChipListProps {
+    pub is_pinned_chip_view: bool,
+}
+
+pub fn chip_list<B: Backend>(app: &App, f: &mut Frame<B>, area: Rect, props: &ChipListProps) {
     let sensors = app.state.get_sensors();
     let lower_block = Block::default().title("Sensors List").borders(Borders::ALL);
+    let selected_chip = if props.is_pinned_chip_view {
+        app.state.get_pinned_chip().unwrap()
+    } else {
+        app.state.get_selected_chip()
+    };
     let chip_list_items: Vec<ListItem> = sensors
         .chip_iter(None)
         .map(|chip| {
             chip_list_item(
                 chip,
-                chip.address() == app.state.get_selected_chip().address(),
+                chip.address() == selected_chip.address(),
             )
         })
         .collect();

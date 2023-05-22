@@ -4,6 +4,7 @@ use crate::sensors;
 
 pub struct AppState {
     selected_chip: Option<i32>,
+    pinned_chip: Option<i32>,
     sensors: LMSensors,
 }
 
@@ -20,6 +21,16 @@ impl AppState {
                 .unwrap()
         } else {
             self.sensors.chip_iter(None).next().unwrap()
+        }
+    }
+
+    pub fn get_pinned_chip(&self) -> Option<ChipRef> {
+        if let Some(pinned_chip) = self.pinned_chip {
+            self.sensors
+                .chip_iter(None)
+                .find(|chip| chip.address().unwrap() == pinned_chip)
+        } else {
+            None
         }
     }
 
@@ -58,6 +69,15 @@ impl AppState {
             .get_nth_chip((current_chip_index.checked_sub(1).unwrap_or(0)) as isize)
             .address();
     }
+
+    pub fn set_pinned_chip(&mut self) {
+        if let Some(_) = self.pinned_chip {
+            self.pinned_chip = None;
+        } else {
+            let selected_chip = self.get_selected_chip();
+            self.pinned_chip = selected_chip.address();
+        };
+    }
 }
 
 impl Default for AppState {
@@ -65,6 +85,7 @@ impl Default for AppState {
         AppState {
             selected_chip: None,
             sensors: sensors::get_all_sensors().unwrap(),
+            pinned_chip: None,
         }
     }
 }
