@@ -19,7 +19,7 @@ impl<T: Display> Logger<T> {
         let mut out = OpenOptions::new()
             .write(true)
             .append(true)
-            .open("err.log")
+            .open("msg.log")
             .unwrap();
         out.set_len(0).unwrap();
 
