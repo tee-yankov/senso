@@ -61,7 +61,7 @@ fn charts<B: Backend>(app: &App, f: &mut Frame<B>, layout: &[Rect], props: &Chip
         let feature = chip.feature_iter().find(|feature| {
             feature.label().unwrap() == *label
         }).unwrap();
-        let max_t = get_sub_feature(&feature, Kind::TemperatureCritical).unwrap_or(0.0);
+        let max_t = get_sub_feature(&feature, Kind::TemperatureCritical).unwrap_or(100.0);
         let max_t_label = format!("{}C", &max_t);
         let half_max_t_label = format!("{}C", (max_t / 2.0).round());
         let current_t_pct_from_max = if max_t != 0.0 {
@@ -84,10 +84,12 @@ fn charts<B: Backend>(app: &App, f: &mut Frame<B>, layout: &[Rect], props: &Chip
             .collect();
         // x is index
         // y is temp
-        let color = if current_t_pct_from_max > 50 {
-            Color::Red
-        } else {
+        let color = if current_t_pct_from_max < 50 {
             Color::Blue
+        } else if current_t_pct_from_max < 80 {
+            Color::Yellow
+        } else {
+            Color::Red
         };
         let dataset = Dataset::default()
             .name(label)
