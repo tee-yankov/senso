@@ -2,13 +2,16 @@ use std::collections::HashMap;
 
 use lm_sensors::{prelude::SharedChip, ChipRef, LMSensors};
 
-use crate::{ring_buffer::RingBuf, sensors};
+use crate::{
+    components::temperature_graphs::get_temperature, ring_buffer::RingBuf,
+    sensors,
+};
 
 pub struct AppState {
     selected_chip: Option<i32>,
     pinned_chip: Option<i32>,
     sensors: LMSensors,
-    historical_data: HashMap<i32, RingBuf<(String, f64, f64)>>,
+    historical_data: HashMap<String, RingBuf<f64>>,
 }
 
 impl AppState {
@@ -64,6 +67,7 @@ impl AppState {
         self.selected_chip = self
             .get_nth_chip((current_chip_index + 1) as isize)
             .address();
+        self.historical_data = HashMap::new();
     }
 
     pub fn select_previous_chip(&mut self) {
@@ -71,6 +75,7 @@ impl AppState {
         self.selected_chip = self
             .get_nth_chip((current_chip_index.checked_sub(1).unwrap_or(0)) as isize)
             .address();
+        self.historical_data = HashMap::new();
     }
 
     pub fn set_pinned_chip(&mut self) {
@@ -82,7 +87,8 @@ impl AppState {
         };
     }
 
-    pub fn append_historical_data(&mut self, value: (String, f64, f64)) {
+    pub fn get_historical_data(&self, label: &str) -> Option<&RingBuf<f64>> {
+        self.historical_data.get(label)
     }
 }
 
@@ -109,7 +115,20 @@ impl App {
     }
 
     pub fn tick(&mut self) {
-        let chip = self.state.get_selected_chip();
-        // self.state.append_historical_data(get_temperature_graph_data(&chip));
+        self.append_historical_data();
+    }
+
+    pub fn append_historical_data(&mut self) {
+        for chip in self.state.sensors.chip_iter(None) {
+            for (label, current_t) in get_temperature(&chip).iter() {
+                if let Some(entry) = self.state.historical_data.get_mut(label) {
+                    entry.put(*current_t);
+                } else {
+                    let mut ring_buf = RingBuf::new(100);
+                    ring_buf.put(*current_t);
+                    self.state.historical_data.insert(label.to_string(), ring_buf);
+                }
+            }
+        }
     }
 }

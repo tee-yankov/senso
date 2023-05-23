@@ -1,10 +1,11 @@
 use std::collections::VecDeque;
 
 #[derive(Debug)]
+// Technically a FILO queue with a fixed capacity, not super exactly a ring buf
 pub struct RingBuf<T> {
     head: usize,
     capacity: usize,
-    buf: VecDeque<T>,
+    pub buf: VecDeque<T>,
 }
 
 impl<T> From<Vec<T>> for RingBuf<T> {
@@ -46,11 +47,12 @@ impl<T> RingBuf<T> {
 }
 
 mod tests {
+    #[allow(unused)]
     use super::RingBuf;
 
     #[test]
     fn test_ring_buf_from_vec() {
-        let items = vec![1, 2 ,3, 4, 5, 6, 7, 8, 9];
+        let items = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
         let mut ring_buf = RingBuf::from(items);
 
         ring_buf.put(10);
@@ -60,7 +62,6 @@ mod tests {
         ring_buf.put(14);
         ring_buf.put(15);
 
-        dbg!(&ring_buf);
         assert!(ring_buf.len() == 9);
         assert!(ring_buf.get().iter().next() == Some(&7));
         assert!(ring_buf.get().iter().last() == Some(&15));
