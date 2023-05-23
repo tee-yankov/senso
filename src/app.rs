@@ -67,7 +67,6 @@ impl AppState {
         self.selected_chip = self
             .get_nth_chip((current_chip_index + 1) as isize)
             .address();
-        self.historical_data = HashMap::new();
     }
 
     pub fn select_previous_chip(&mut self) {
@@ -75,7 +74,6 @@ impl AppState {
         self.selected_chip = self
             .get_nth_chip((current_chip_index.checked_sub(1).unwrap_or(0)) as isize)
             .address();
-        self.historical_data = HashMap::new();
     }
 
     pub fn set_pinned_chip(&mut self) {
