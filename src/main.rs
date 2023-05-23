@@ -15,6 +15,7 @@ mod logger;
 mod sensors;
 mod terminal;
 mod components;
+mod ring_buffer;
 
 fn main() -> Result<(), Box<dyn Error>> {
     start_logger();

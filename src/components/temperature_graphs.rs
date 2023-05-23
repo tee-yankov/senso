@@ -1,11 +1,11 @@
 use std::iter::zip;
 
-use lm_sensors::{prelude::SharedChip, FeatureRef, value::Kind, feature};
+use lm_sensors::{feature, prelude::SharedChip, value::Kind, ChipRef, FeatureRef};
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Layout, Rect},
-    style::{Style, Color},
-    widgets::{Gauge, Block, Borders},
+    style::{Color, Style},
+    widgets::{Block, Borders, Gauge},
     Frame,
 };
 
@@ -13,25 +13,21 @@ use crate::app::App;
 
 use super::chip_list::ChipListProps;
 
-fn get_sub_feature(feature: &FeatureRef, kind: Kind) -> Option<f64>  {
-    feature.sub_feature_by_kind(kind)
-           .iter()
-           .map(|sub_feature| sub_feature.value().unwrap().raw_value())
-           .next()
+fn get_sub_feature(feature: &FeatureRef, kind: Kind) -> Option<f64> {
+    feature
+        .sub_feature_by_kind(kind)
+        .iter()
+        .map(|sub_feature| sub_feature.value().unwrap().raw_value())
+        .next()
 }
 
-pub fn temperature_graphs<'a, B: Backend>(app: &App, f: &mut Frame<B>, area: Rect, props: &ChipListProps) {
-    let chip = if props.is_pinned_chip_view {
-        app.state.get_pinned_chip().unwrap()
-    } else {
-        app.state.get_selected_chip()
-    };
-    let data: Vec<(String, f64, f64)> = chip
-        .feature_iter()
+pub fn get_temperature_graph_data(chip: &ChipRef) -> Vec<(String, f64, f64)> {
+    chip.feature_iter()
         .filter(|feature| matches!(feature.kind(), Some(feature::Kind::Temperature)))
         .map(|feature| {
             let temperature: f64 = get_sub_feature(&feature, Kind::TemperatureInput).unwrap_or(0.0);
-            let max_temperature: f64 = get_sub_feature(&feature, Kind::TemperatureCritical).unwrap_or(0.0);
+            let max_temperature: f64 =
+                get_sub_feature(&feature, Kind::TemperatureCritical).unwrap_or(0.0);
 
             (
                 String::from(feature.label().unwrap()),
@@ -39,7 +35,21 @@ pub fn temperature_graphs<'a, B: Backend>(app: &App, f: &mut Frame<B>, area: Rec
                 max_temperature,
             )
         })
-        .collect();
+        .collect()
+}
+
+pub fn temperature_graphs<'a, B: Backend>(
+    app: &App,
+    f: &mut Frame<B>,
+    area: Rect,
+    props: &ChipListProps,
+) {
+    let chip = if props.is_pinned_chip_view {
+        app.state.get_pinned_chip().unwrap()
+    } else {
+        app.state.get_selected_chip()
+    };
+    let data = get_temperature_graph_data(&chip);
 
     let layout = Layout::default()
         .direction(ratatui::layout::Direction::Vertical)

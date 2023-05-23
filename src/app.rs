@@ -1,11 +1,14 @@
+use std::collections::HashMap;
+
 use lm_sensors::{prelude::SharedChip, ChipRef, LMSensors};
 
-use crate::sensors;
+use crate::{ring_buffer::RingBuf, sensors};
 
 pub struct AppState {
     selected_chip: Option<i32>,
     pinned_chip: Option<i32>,
     sensors: LMSensors,
+    historical_data: HashMap<i32, RingBuf<(String, f64, f64)>>,
 }
 
 impl AppState {
@@ -78,6 +81,9 @@ impl AppState {
             self.pinned_chip = selected_chip.address();
         };
     }
+
+    pub fn append_historical_data(&mut self, value: (String, f64, f64)) {
+    }
 }
 
 impl Default for AppState {
@@ -86,6 +92,7 @@ impl Default for AppState {
             selected_chip: None,
             sensors: sensors::get_all_sensors().unwrap(),
             pinned_chip: None,
+            historical_data: HashMap::new(),
         }
     }
 }
@@ -101,5 +108,8 @@ impl App {
         }
     }
 
-    pub fn tick(&mut self) {}
+    pub fn tick(&mut self) {
+        let chip = self.state.get_selected_chip();
+        // self.state.append_historical_data(get_temperature_graph_data(&chip));
+    }
 }
