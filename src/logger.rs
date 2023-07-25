@@ -16,15 +16,16 @@ struct Logger<T> {
 
 impl<T: Display> Logger<T> {
     fn start(&self) {
-        let mut out = OpenOptions::new()
+        let out = OpenOptions::new()
             .write(true)
             .append(true)
-            .open("msg.log")
-            .unwrap();
-        out.set_len(0).unwrap();
+            .open("msg.log");
+        if let Ok(mut out) = out {
+            out.set_len(0).unwrap();
 
-        while let Ok(msg) = self.rx.lock().unwrap().recv() {
-            writeln!(&mut out, "{}", msg).unwrap();
+            while let Ok(msg) = self.rx.lock().unwrap().recv() {
+                writeln!(&mut out, "{}", msg).unwrap();
+            }
         }
     }
 }
